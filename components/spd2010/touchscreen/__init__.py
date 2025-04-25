@@ -10,7 +10,7 @@ CODEOWNERS = ["@doddg"]
 DEPENDENCIES = ["i2c"]
 
 Spd2010Touchscreen = spd2010_ns.class_(
-    "spd2010Touchscreen",
+    "Spd2010Touchscreen",
     touchscreen.Touchscreen,
     i2c.I2CDevice,
 )
