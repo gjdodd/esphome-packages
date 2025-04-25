@@ -13,6 +13,57 @@ namespace spd2010 {
 
 using namespace touchscreen;
 
+typedef struct {
+  uint8_t id;
+  uint16_t x;
+  uint16_t y;
+  uint8_t weight;
+} tp_report_t;
+struct SPD2010_Touch{
+  tp_report_t rpt[10];
+  uint8_t touch_num;     // Number of touch points
+  uint8_t pack_code;
+  uint8_t down;
+  uint8_t up;
+  uint8_t gesture;
+  uint16_t down_x;
+  uint16_t down_y;
+  uint16_t up_x;
+  uint16_t up_y;
+};
+
+typedef struct {
+  uint8_t none0;
+  uint8_t none1;
+  uint8_t none2;
+  uint8_t cpu_run;
+  uint8_t tint_low;
+  uint8_t tic_in_cpu;
+  uint8_t tic_in_bios;
+  uint8_t tic_busy;
+} tp_status_high_t;
+
+typedef struct {
+  uint8_t pt_exist;
+  uint8_t gesture;
+  uint8_t key;
+  uint8_t aux;
+  uint8_t keep;
+  uint8_t raw_or_pt;
+  uint8_t none6;
+  uint8_t none7;
+} tp_status_low_t;
+
+typedef struct {
+  tp_status_low_t status_low;
+  tp_status_high_t status_high;
+  uint16_t read_len;
+} tp_status_t;
+typedef struct {
+  uint8_t status;
+  uint16_t next_packet_len;
+} tp_hdp_status_t;
+
 class Spd2010Touchscreen : public Touchscreen, public i2c::I2CDevice {
  public:
   void setup() override;

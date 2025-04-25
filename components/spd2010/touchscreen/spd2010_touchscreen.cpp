@@ -8,19 +8,6 @@ namespace spd2010 {
 
 static const char *const TAG = "spd2010.touchscreen";
 
-struct SPD2010_Touch{
-  tp_report_t rpt[10];
-  uint8_t touch_num;     // Number of touch points
-  uint8_t pack_code;
-  uint8_t down;
-  uint8_t up;
-  uint8_t gesture;
-  uint16_t down_x;
-  uint16_t down_y;
-  uint16_t up_x;
-  uint16_t up_y;
-};
-
 #define ERROR_CHECK(err) \
   if ((err) != i2c::ERROR_OK) { \
     ESP_LOGE(TAG, "Failed to communicate!"); \
@@ -49,11 +36,8 @@ void Spd2010Touchscreen::update_touches() {
   touch_data.touch_num = touch_cnt;
   /* Fill all coordinates */
   for (int i = 0; i < touch_cnt; i++) {
-    touch_data.rpt[i].x = touch.rpt[i].x;
-    touch_data.rpt[i].y = touch.rpt[i].y;
-    touch_data.rpt[i].weight = touch.rpt[i].weight;
+    this->add_raw_touch_position_(touch.rpt[i].id, touch.rpt[i].x, touch.rpt[i].y);   
   }
-  interrupts();
 
   this->status_clear_warning();
 }
