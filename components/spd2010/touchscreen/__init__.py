@@ -6,7 +6,7 @@ from esphome.const import CONF_ID, CONF_INTERRUPT_PIN, CONF_RESET_PIN
 
 from .. import spd2010_ns
 
-CODEOWNERS = ["@doddg"]
+CODEOWNERS = ["@gjdodd"]
 DEPENDENCIES = ["i2c"]
 
 Spd2010Touchscreen = spd2010_ns.class_(
@@ -17,18 +17,19 @@ Spd2010Touchscreen = spd2010_ns.class_(
 
 CONF_SPD2010_TOUCHSCREEN_ID = "spd2010_touchscreen_id"
 
-CONFIG_SCHEMA = touchscreen.touchscreen_schema("250ms").extend(
+CONFIG_SCHEMA = touchscreen.TOUCHSCREEN_SCHEMA.extend(
     cv.Schema(
         {
             cv.GenerateID(): cv.declare_id(Spd2010Touchscreen),
             cv.Required(CONF_INTERRUPT_PIN): cv.All(
                 pins.internal_gpio_input_pin_schema
             ),
-            cv.Required(CONF_RESET_PIN): pins.gpio_output_pin_schema,
+            cv.Required(CONF_RESET_PIN): : cv.All(
+                pins.gpio_output_pin_schema,
+            ),
         }
     ).extend(i2c.i2c_device_schema(0x53))
 )
-
 
 async def to_code(config):
     var = cg.new_Pvariable(config[CONF_ID])
