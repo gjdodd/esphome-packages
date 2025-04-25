@@ -1,4 +1,4 @@
-#include "spd2010_touchscreen.h"
+#include "spd2010.h"
 
 #include "esphome/core/helpers.h"
 #include "esphome/core/log.h"
