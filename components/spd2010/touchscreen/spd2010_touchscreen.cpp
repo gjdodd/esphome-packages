@@ -1,0 +1,243 @@
+#include "spd2010_touchscreen.h"
+
+#include "esphome/core/helpers.h"
+#include "esphome/core/log.h"
+
+namespace esphome {
+namespace spd2010 {
+
+static const char *const TAG = "spd2010.touchscreen";
+
+struct SPD2010_Touch{
+  tp_report_t rpt[10];
+  uint8_t touch_num;     // Number of touch points
+  uint8_t pack_code;
+  uint8_t down;
+  uint8_t up;
+  uint8_t gesture;
+  uint16_t down_x;
+  uint16_t down_y;
+  uint16_t up_x;
+  uint16_t up_y;
+};
+
+#define ERROR_CHECK(err) \
+  if ((err) != i2c::ERROR_OK) { \
+    ESP_LOGE(TAG, "Failed to communicate!"); \
+    this->status_set_warning(); \
+    return; \
+  }
+  
+#define CONFIG_ESP_LCD_TOUCH_MAX_POINTS     (5)     
+#define SPD2010_ADDR                    (0x53)
+
+void Spd2010Touchscreen::setup() {
+  ESP_LOGCONFIG(TAG, "Setting up SPD2010 Touchscreen...");
+  this->interrupt_pin_->pin_mode(gpio::FLAG_INPUT | gpio::FLAG_PULLUP);
+  this->interrupt_pin_->setup();
+
+  this->attach_interrupt_(this->interrupt_pin_, gpio::INTERRUPT_FALLING_EDGE);  
+}
+
+void Spd2010Touchscreen::update_touches() {
+  uint8_t touch_cnt = 0;
+  struct SPD2010_Touch touch = {0};
+  this->tp_read_data(&touch);
+  
+  /* Expect Number of touched points */
+  touch_cnt = (touch.touch_num > CONFIG_ESP_LCD_TOUCH_MAX_POINTS ? CONFIG_ESP_LCD_TOUCH_MAX_POINTS : touch.touch_num);
+  touch_data.touch_num = touch_cnt;
+  /* Fill all coordinates */
+  for (int i = 0; i < touch_cnt; i++) {
+    touch_data.rpt[i].x = touch.rpt[i].x;
+    touch_data.rpt[i].y = touch.rpt[i].y;
+    touch_data.rpt[i].weight = touch.rpt[i].weight;
+  }
+  interrupts();
+
+  this->status_clear_warning();
+}
+
+void Spd2010Touchscreen::dump_config() {
+  ESP_LOGCONFIG(TAG, "SPD2010 Touchscreen:");
+  LOG_I2C_DEVICE(this);
+  LOG_PIN("  Interrupt Pin: ", this->interrupt_pin_);
+}
+
+esp_err_t write_tp_point_mode_cmd()
+{
+  uint8_t sample_data[4];
+  sample_data[0] = 0x50;
+  sample_data[1] = 0x00;
+  sample_data[2] = 0x00;
+  sample_data[3] = 0x00;
+  I2C_Write_Touch(SPD2010_ADDR, (((uint16_t)sample_data[0] << 8) | (sample_data[1])), &sample_data[2], 2);
+  esp_rom_delay_us(200);
+  return ESP_OK;
+}
+
+esp_err_t write_tp_start_cmd()
+{
+  uint8_t sample_data[4];
+  sample_data[0] = 0x46;
+  sample_data[1] = 0x00;
+  sample_data[2] = 0x00;
+  sample_data[3] = 0x00;
+  I2C_Write_Touch(SPD2010_ADDR, (((uint16_t)sample_data[0] << 8) | (sample_data[1])), &sample_data[2], 2);
+  esp_rom_delay_us(200);
+  return ESP_OK;
+}
+
+esp_err_t write_tp_cpu_start_cmd()
+{
+  uint8_t sample_data[4];
+  sample_data[0] = 0x04;
+  sample_data[1] = 0x00;
+  sample_data[2] = 0x01;
+  sample_data[3] = 0x00;
+  I2C_Write_Touch(SPD2010_ADDR, (((uint16_t)sample_data[0] << 8) | (sample_data[1])),&sample_data[2], 2);
+  esp_rom_delay_us(200);
+  return ESP_OK;
+}
+
+esp_err_t write_tp_clear_int_cmd()
+{
+  uint8_t sample_data[4];
+  sample_data[0] = 0x02;
+  sample_data[1] = 0x00;
+  sample_data[2] = 0x01;
+  sample_data[3] = 0x00;
+  I2C_Write_Touch(SPD2010_ADDR, (((uint16_t)sample_data[0] << 8) | (sample_data[1])),&sample_data[2], 2);
+  esp_rom_delay_us(200);
+  return ESP_OK;
+}
+
+esp_err_t read_tp_status_length(tp_status_t *tp_status)
+{
+  uint8_t sample_data[4];
+  sample_data[0] = 0x20;
+  sample_data[1] = 0x00;
+  I2C_Read_Touch(SPD2010_ADDR, (((uint16_t)sample_data[0] << 8) | (sample_data[1])),sample_data, 4);
+  esp_rom_delay_us(200);
+  tp_status->status_low.pt_exist = (sample_data[0] & 0x01);
+  tp_status->status_low.gesture = (sample_data[0] & 0x02);
+  tp_status->status_low.aux = ((sample_data[0] & 0x08)); //aux, cytang
+  tp_status->status_high.tic_busy = ((sample_data[1] & 0x80) >> 7);
+  tp_status->status_high.tic_in_bios = ((sample_data[1] & 0x40) >> 6);
+  tp_status->status_high.tic_in_cpu = ((sample_data[1] & 0x20) >> 5);
+  tp_status->status_high.tint_low = ((sample_data[1] & 0x10) >> 4);
+  tp_status->status_high.cpu_run = ((sample_data[1] & 0x08) >> 3);
+  tp_status->read_len = (sample_data[3] << 8 | sample_data[2]);
+  return ESP_OK;
+}
+
+esp_err_t read_tp_hdp(tp_status_t *tp_status, SPD2010_Touch *touch)
+{
+  uint8_t sample_data[4+(10*6)]; // 4 Bytes Header + 10 Finger * 6 Bytes
+  uint8_t i, offset;
+  uint8_t check_id;
+  sample_data[0] = 0x00;
+  sample_data[1] = 0x03;
+  I2C_Read_Touch(SPD2010_ADDR, (((uint16_t)sample_data[0] << 8) | (sample_data[1])),sample_data, tp_status->read_len);
+
+
+  check_id = sample_data[4];
+  if ((check_id <= 0x0A) && tp_status->status_low.pt_exist) {
+    touch->touch_num = ((tp_status->read_len - 4)/6);
+    touch->gesture = 0x00;
+    for (i = 0; i < touch->touch_num; i++) {
+      offset = i*6;
+      touch->rpt[i].id = sample_data[4 + offset];
+      touch->rpt[i].x = (((sample_data[7 + offset] & 0xF0) << 4)| sample_data[5 + offset]);
+      touch->rpt[i].y = (((sample_data[7 + offset] & 0x0F) << 8)| sample_data[6 + offset]);
+      touch->rpt[i].weight = sample_data[8 + offset];
+    }
+    /* For slide gesture recognize */
+    if ((touch->rpt[0].weight != 0) && (touch->down != 1)) {
+      touch->down = 1;
+      touch->up = 0 ;
+      touch->down_x = touch->rpt[0].x;
+      touch->down_y = touch->rpt[0].y;
+    } else if ((touch->rpt[0].weight == 0) && (touch->down == 1)) {
+      touch->up = 1;
+      touch->down = 0;
+      touch->up_x = touch->rpt[0].x;
+      touch->up_y = touch->rpt[0].y;
+    }    
+  } else if ((check_id == 0xF6) && tp_status->status_low.gesture) {
+    touch->touch_num = 0x00;
+    touch->up = 0;
+    touch->down = 0;
+    touch->gesture = sample_data[6] & 0x07;
+    printf("gesture : 0x%02x\n", touch->gesture);
+  } else {
+    touch->touch_num = 0x00;
+    touch->gesture = 0x00;
+  }
+  return ESP_OK;
+}
+
+esp_err_t read_tp_hdp_status(tp_hdp_status_t *tp_hdp_status)
+{
+  uint8_t sample_data[8];
+  sample_data[0] = 0xFC;
+  sample_data[1] = 0x02;
+  I2C_Read_Touch(SPD2010_ADDR, (((uint16_t)sample_data[0] << 8) | (sample_data[1])),sample_data, 8);
+  tp_hdp_status->status = sample_data[5];
+  tp_hdp_status->next_packet_len = (sample_data[2] | sample_data[3] << 8);
+  return ESP_OK;
+}
+
+esp_err_t Read_HDP_REMAIN_DATA(tp_hdp_status_t *tp_hdp_status)
+{
+  uint8_t sample_data[32];
+  sample_data[0] = 0x00;
+  sample_data[1] = 0x03;
+  I2C_Read_Touch(SPD2010_ADDR,  (((uint16_t)sample_data[0] << 8) | (sample_data[1])),sample_data, tp_hdp_status->next_packet_len);
+  return ESP_OK;
+}
+
+esp_err_t tp_read_data(SPD2010_Touch *touch)
+{
+  tp_status_t tp_status = {0};
+  tp_hdp_status_t tp_hdp_status = {0};
+  read_tp_status_length(&tp_status);
+  if (tp_status.status_high.tic_in_bios) {
+    /* Write Clear TINT Command */
+    write_tp_clear_int_cmd();
+    /* Write CPU Start Command */
+    write_tp_cpu_start_cmd();
+  } else if (tp_status.status_high.tic_in_cpu) {
+    /* Write Touch Change Command */
+    write_tp_point_mode_cmd();
+    /* Write Touch Start Command */
+    write_tp_start_cmd();
+    /* Write Clear TINT Command */
+    write_tp_clear_int_cmd();
+  } else if (tp_status.status_high.cpu_run && tp_status.read_len == 0) {
+    write_tp_clear_int_cmd();
+  } else if (tp_status.status_low.pt_exist || tp_status.status_low.gesture) {
+    /* Read HDP */
+    read_tp_hdp(&tp_status, touch);
+	hdp_done_check:
+    /* Read HDP Status */
+    read_tp_hdp_status(&tp_hdp_status);
+    if (tp_hdp_status.status == 0x82) {
+      /* Clear INT */
+      write_tp_clear_int_cmd();
+    }
+    else if (tp_hdp_status.status == 0x00) {
+      /* Read HDP Remain Data */
+      Read_HDP_REMAIN_DATA(&tp_hdp_status);
+      goto hdp_done_check;
+    }
+  } else if (tp_status.status_high.cpu_run && tp_status.status_low.aux) {
+    write_tp_clear_int_cmd();
+  }
+
+  return ESP_OK;
+}
+
+
+}  // namespace spd2010
+}  // namespace esphome
