@@ -61,7 +61,7 @@ i2c:
   sda: GPIO11
   scl: GPIO10
   scan: true
-  frequency: 400kHz
+  frequency: 50kHz
   timeout: 1000ms
 
 pca9554:
