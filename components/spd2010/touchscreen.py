@@ -4,8 +4,6 @@ from esphome.components import i2c, touchscreen
 import esphome.config_validation as cv
 from esphome.const import CONF_ID, CONF_INTERRUPT_PIN, CONF_RESET_PIN, CONF_PIN
 
-from .. import spd2010_ns
-
 CODEOWNERS = ["@gjdodd"]
 DEPENDENCIES = ["i2c"]
 
