@@ -73,11 +73,14 @@ class Spd2010Touchscreen : public Touchscreen, public i2c::I2CDevice {
   void dump_config() override;
 
   void set_interrupt_pin(InternalGPIOPin *pin) { this->interrupt_pin_ = pin; }
+  void set_reset_pin(GPIOPin *pin) { this->reset_pin_ = pin; }
 
  protected:
+  void hard_reset_();
   void update_touches() override;
-
-  InternalGPIOPin *interrupt_pin_;
+  
+  InternalGPIOPin *interrupt_pin_{nullptr};
+  GPIOPin *reset_pin_{nullptr};
   
  private:
   bool I2C_Read_Touch(uint8_t Driver_addr, uint16_t Reg_addr, uint8_t *Reg_data, uint32_t Length);

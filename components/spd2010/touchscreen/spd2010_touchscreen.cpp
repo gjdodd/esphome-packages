@@ -24,8 +24,17 @@ void Spd2010Touchscreen::setup() {
   ESP_LOGCONFIG(TAG, "Setting up SPD2010 Touchscreen...");
   this->interrupt_pin_->pin_mode(gpio::FLAG_INPUT | gpio::FLAG_PULLUP);
   this->interrupt_pin_->setup();
-
-  this->attach_interrupt_(this->interrupt_pin_, gpio::INTERRUPT_FALLING_EDGE);  
+  
+  if (this->interrupt_pin_ != nullptr) {
+    this->interrupt_pin_->pin_mode(gpio::FLAG_INPUT | gpio::FLAG_PULLUP);
+    this->interrupt_pin_->setup();
+    this->attach_interrupt_(this->interrupt_pin_, gpio::INTERRUPT_FALLING_EDGE);  
+  }
+  
+  if (this->reset_pin_ != nullptr) {
+    this->reset_pin_->setup();
+    this->hard_reset_();
+  }  
 }
 
 void Spd2010Touchscreen::update_touches() {
@@ -42,6 +51,15 @@ void Spd2010Touchscreen::update_touches() {
   }
 
   this->status_clear_warning();
+}
+
+void Spd2010Touchscreen::hard_reset_() {
+  if (this->reset_pin_ != nullptr) {
+    this->reset_pin_->digital_write(false);
+    delay(50);
+    this->reset_pin_->digital_write(true);
+	delay(50);
+  }
 }
 
 void Spd2010Touchscreen::dump_config() {
