@@ -18,6 +18,8 @@ static const char *const TAG = "spd2010.touchscreen";
 #define CONFIG_ESP_LCD_TOUCH_MAX_POINTS     (5)     
 #define SPD2010_ADDR                    (0x53)
 
+struct SPD2010_Touch touch_data = {0};
+
 void Spd2010Touchscreen::setup() {
   ESP_LOGCONFIG(TAG, "Setting up SPD2010 Touchscreen...");
   this->interrupt_pin_->pin_mode(gpio::FLAG_INPUT | gpio::FLAG_PULLUP);
@@ -48,60 +50,66 @@ void Spd2010Touchscreen::dump_config() {
   LOG_PIN("  Interrupt Pin: ", this->interrupt_pin_);
 }
 
-esp_err_t write_tp_point_mode_cmd()
+esp_err_t Spd2010Touchscreen::write_tp_point_mode_cmd()
 {
   uint8_t sample_data[4];
   sample_data[0] = 0x50;
   sample_data[1] = 0x00;
   sample_data[2] = 0x00;
   sample_data[3] = 0x00;
-  I2C_Write_Touch(SPD2010_ADDR, (((uint16_t)sample_data[0] << 8) | (sample_data[1])), &sample_data[2], 2);
+  
+  this.write_register((((uint16_t)sample_data[0] << 8) | (sample_data[1])), &sample_data[2], 2);  
   esp_rom_delay_us(200);
   return ESP_OK;
 }
 
-esp_err_t write_tp_start_cmd()
+esp_err_t Spd2010Touchscreen::write_tp_start_cmd()
 {
   uint8_t sample_data[4];
   sample_data[0] = 0x46;
   sample_data[1] = 0x00;
   sample_data[2] = 0x00;
   sample_data[3] = 0x00;
-  I2C_Write_Touch(SPD2010_ADDR, (((uint16_t)sample_data[0] << 8) | (sample_data[1])), &sample_data[2], 2);
+  
+  this.write_register((((uint16_t)sample_data[0] << 8) | (sample_data[1])), &sample_data[2], 2);  
   esp_rom_delay_us(200);
   return ESP_OK;
 }
 
-esp_err_t write_tp_cpu_start_cmd()
+esp_err_t Spd2010Touchscreen::write_tp_cpu_start_cmd()
 {
   uint8_t sample_data[4];
   sample_data[0] = 0x04;
   sample_data[1] = 0x00;
   sample_data[2] = 0x01;
   sample_data[3] = 0x00;
-  I2C_Write_Touch(SPD2010_ADDR, (((uint16_t)sample_data[0] << 8) | (sample_data[1])),&sample_data[2], 2);
+  
+  this.write_register((((uint16_t)sample_data[0] << 8) | (sample_data[1])), &sample_data[2], 2);   
   esp_rom_delay_us(200);
   return ESP_OK;
 }
 
-esp_err_t write_tp_clear_int_cmd()
+esp_err_t Spd2010Touchscreen::write_tp_clear_int_cmd()
 {
   uint8_t sample_data[4];
   sample_data[0] = 0x02;
   sample_data[1] = 0x00;
   sample_data[2] = 0x01;
   sample_data[3] = 0x00;
-  I2C_Write_Touch(SPD2010_ADDR, (((uint16_t)sample_data[0] << 8) | (sample_data[1])),&sample_data[2], 2);
+  
+  this.write_register((((uint16_t)sample_data[0] << 8) | (sample_data[1])), &sample_data[2], 2); 
   esp_rom_delay_us(200);
   return ESP_OK;
 }
 
-esp_err_t read_tp_status_length(tp_status_t *tp_status)
+esp_err_t Spd2010Touchscreen::read_tp_status_length(tp_status_t *tp_status)
 {
   uint8_t sample_data[4];
   sample_data[0] = 0x20;
   sample_data[1] = 0x00;
-  I2C_Read_Touch(SPD2010_ADDR, (((uint16_t)sample_data[0] << 8) | (sample_data[1])),sample_data, 4);
+  
+  this.read_register((((uint16_t)sample_data[0] << 8) | (sample_data[1])), sample_data, 4);  
+    
   esp_rom_delay_us(200);
   tp_status->status_low.pt_exist = (sample_data[0] & 0x01);
   tp_status->status_low.gesture = (sample_data[0] & 0x02);
@@ -115,15 +123,15 @@ esp_err_t read_tp_status_length(tp_status_t *tp_status)
   return ESP_OK;
 }
 
-esp_err_t read_tp_hdp(tp_status_t *tp_status, SPD2010_Touch *touch)
+esp_err_t Spd2010Touchscreen::read_tp_hdp(tp_status_t *tp_status, SPD2010_Touch *touch)
 {
   uint8_t sample_data[4+(10*6)]; // 4 Bytes Header + 10 Finger * 6 Bytes
   uint8_t i, offset;
   uint8_t check_id;
   sample_data[0] = 0x00;
   sample_data[1] = 0x03;
-  I2C_Read_Touch(SPD2010_ADDR, (((uint16_t)sample_data[0] << 8) | (sample_data[1])),sample_data, tp_status->read_len);
-
+  
+  this.read_register((((uint16_t)sample_data[0] << 8) | (sample_data[1])), sample_data, tp_status->read_len);   
 
   check_id = sample_data[4];
   if ((check_id <= 0x0A) && tp_status->status_low.pt_exist) {
@@ -161,27 +169,31 @@ esp_err_t read_tp_hdp(tp_status_t *tp_status, SPD2010_Touch *touch)
   return ESP_OK;
 }
 
-esp_err_t read_tp_hdp_status(tp_hdp_status_t *tp_hdp_status)
+esp_err_t Spd2010Touchscreen::read_tp_hdp_status(tp_hdp_status_t *tp_hdp_status)
 {
   uint8_t sample_data[8];
   sample_data[0] = 0xFC;
   sample_data[1] = 0x02;
-  I2C_Read_Touch(SPD2010_ADDR, (((uint16_t)sample_data[0] << 8) | (sample_data[1])),sample_data, 8);
+  
+  this.read_register((((uint16_t)sample_data[0] << 8) | (sample_data[1])), sample_data, 8);  
+  
   tp_hdp_status->status = sample_data[5];
   tp_hdp_status->next_packet_len = (sample_data[2] | sample_data[3] << 8);
   return ESP_OK;
 }
 
-esp_err_t Read_HDP_REMAIN_DATA(tp_hdp_status_t *tp_hdp_status)
+esp_err_t Spd2010Touchscreen::Read_HDP_REMAIN_DATA(tp_hdp_status_t *tp_hdp_status)
 {
   uint8_t sample_data[32];
   sample_data[0] = 0x00;
   sample_data[1] = 0x03;
-  I2C_Read_Touch(SPD2010_ADDR,  (((uint16_t)sample_data[0] << 8) | (sample_data[1])),sample_data, tp_hdp_status->next_packet_len);
+  
+  this.read_register((((uint16_t)sample_data[0] << 8) | (sample_data[1])), sample_data, tp_hdp_status->next_packet_len);  
+  
   return ESP_OK;
 }
 
-esp_err_t tp_read_data(SPD2010_Touch *touch)
+esp_err_t Spd2010Touchscreen::tp_read_data(SPD2010_Touch *touch)
 {
   tp_status_t tp_status = {0};
   tp_hdp_status_t tp_hdp_status = {0};

@@ -64,6 +64,8 @@ typedef struct {
   uint16_t next_packet_len;
 } tp_hdp_status_t;
 
+extern struct SPD2010_Touch touch_data;
+
 class Spd2010Touchscreen : public Touchscreen, public i2c::I2CDevice {
  public:
   void setup() override;
@@ -78,6 +80,8 @@ class Spd2010Touchscreen : public Touchscreen, public i2c::I2CDevice {
   InternalGPIOPin *interrupt_pin_;
   
  private:
+  bool I2C_Read_Touch(uint8_t Driver_addr, uint16_t Reg_addr, uint8_t *Reg_data, uint32_t Length);
+  bool I2C_Write_Touch(uint8_t Driver_addr, uint16_t Reg_addr, const uint8_t *Reg_data, uint32_t Length);
   esp_err_t write_tp_point_mode_cmd();
   esp_err_t write_tp_start_cmd();
   esp_err_t write_tp_cpu_start_cmd();
