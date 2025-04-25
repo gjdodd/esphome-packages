@@ -58,7 +58,7 @@ esp_err_t Spd2010Touchscreen::write_tp_point_mode_cmd()
   sample_data[2] = 0x00;
   sample_data[3] = 0x00;
   
-  this.write_register((((uint16_t)sample_data[0] << 8) | (sample_data[1])), &sample_data[2], 2);  
+  this->write_register((((uint16_t)sample_data[0] << 8) | (sample_data[1])), &sample_data[2], 2);  
   esp_rom_delay_us(200);
   return ESP_OK;
 }
@@ -71,7 +71,7 @@ esp_err_t Spd2010Touchscreen::write_tp_start_cmd()
   sample_data[2] = 0x00;
   sample_data[3] = 0x00;
   
-  this.write_register((((uint16_t)sample_data[0] << 8) | (sample_data[1])), &sample_data[2], 2);  
+  this->write_register((((uint16_t)sample_data[0] << 8) | (sample_data[1])), &sample_data[2], 2);  
   esp_rom_delay_us(200);
   return ESP_OK;
 }
@@ -84,7 +84,7 @@ esp_err_t Spd2010Touchscreen::write_tp_cpu_start_cmd()
   sample_data[2] = 0x01;
   sample_data[3] = 0x00;
   
-  this.write_register((((uint16_t)sample_data[0] << 8) | (sample_data[1])), &sample_data[2], 2);   
+  this->write_register((((uint16_t)sample_data[0] << 8) | (sample_data[1])), &sample_data[2], 2);   
   esp_rom_delay_us(200);
   return ESP_OK;
 }
@@ -97,7 +97,7 @@ esp_err_t Spd2010Touchscreen::write_tp_clear_int_cmd()
   sample_data[2] = 0x01;
   sample_data[3] = 0x00;
   
-  this.write_register((((uint16_t)sample_data[0] << 8) | (sample_data[1])), &sample_data[2], 2); 
+  this->write_register((((uint16_t)sample_data[0] << 8) | (sample_data[1])), &sample_data[2], 2); 
   esp_rom_delay_us(200);
   return ESP_OK;
 }
@@ -108,7 +108,7 @@ esp_err_t Spd2010Touchscreen::read_tp_status_length(tp_status_t *tp_status)
   sample_data[0] = 0x20;
   sample_data[1] = 0x00;
   
-  this.read_register((((uint16_t)sample_data[0] << 8) | (sample_data[1])), sample_data, 4);  
+  this->read_register((((uint16_t)sample_data[0] << 8) | (sample_data[1])), sample_data, 4);  
     
   esp_rom_delay_us(200);
   tp_status->status_low.pt_exist = (sample_data[0] & 0x01);
@@ -131,7 +131,7 @@ esp_err_t Spd2010Touchscreen::read_tp_hdp(tp_status_t *tp_status, SPD2010_Touch 
   sample_data[0] = 0x00;
   sample_data[1] = 0x03;
   
-  this.read_register((((uint16_t)sample_data[0] << 8) | (sample_data[1])), sample_data, tp_status->read_len);   
+  this->read_register((((uint16_t)sample_data[0] << 8) | (sample_data[1])), sample_data, tp_status->read_len);   
 
   check_id = sample_data[4];
   if ((check_id <= 0x0A) && tp_status->status_low.pt_exist) {
@@ -175,7 +175,7 @@ esp_err_t Spd2010Touchscreen::read_tp_hdp_status(tp_hdp_status_t *tp_hdp_status)
   sample_data[0] = 0xFC;
   sample_data[1] = 0x02;
   
-  this.read_register((((uint16_t)sample_data[0] << 8) | (sample_data[1])), sample_data, 8);  
+  this->read_register((((uint16_t)sample_data[0] << 8) | (sample_data[1])), sample_data, 8);  
   
   tp_hdp_status->status = sample_data[5];
   tp_hdp_status->next_packet_len = (sample_data[2] | sample_data[3] << 8);
@@ -188,7 +188,7 @@ esp_err_t Spd2010Touchscreen::Read_HDP_REMAIN_DATA(tp_hdp_status_t *tp_hdp_statu
   sample_data[0] = 0x00;
   sample_data[1] = 0x03;
   
-  this.read_register((((uint16_t)sample_data[0] << 8) | (sample_data[1])), sample_data, tp_hdp_status->next_packet_len);  
+  this->read_register((((uint16_t)sample_data[0] << 8) | (sample_data[1])), sample_data, tp_hdp_status->next_packet_len);  
   
   return ESP_OK;
 }
