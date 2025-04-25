@@ -22,7 +22,7 @@ void Spd2010Touchscreen::setup() {
   
   if (this->enable_pin_ != nullptr) {
     this->enable_pin_->setup();
-    this->enable_();
+    //this->enable_();
   }  
   
   if (this->reset_pin_ != nullptr) {

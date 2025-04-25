@@ -97,7 +97,7 @@ display:
     cs_pin: GPIO21
     reset_pin: 
       pca9554: pca9554a_device
-      number: 1
+      number: 2
       inverted: true 
     auto_clear_enabled: false #set to false for LVGL    
     spi_mode: 0       
