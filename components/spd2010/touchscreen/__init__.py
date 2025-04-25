@@ -15,7 +15,7 @@ Spd2010Touchscreen = spd2010_ns.class_(
     i2c.I2CDevice,
 )
 
-CONF_SPD2010_TOUCHSCREEN_ID = "spd2010_touchscreen_id"
+CONF_SPD2010_ID = "spd2010_id"
 
 CONFIG_SCHEMA = touchscreen.TOUCHSCREEN_SCHEMA.extend(
     cv.Schema(

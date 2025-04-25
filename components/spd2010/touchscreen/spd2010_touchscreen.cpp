@@ -6,17 +6,9 @@
 namespace esphome {
 namespace spd2010 {
 
-static const char *const TAG = "spd2010.touchscreen";
-
-#define ERROR_CHECK(err) \
-  if ((err) != i2c::ERROR_OK) { \
-    ESP_LOGE(TAG, "Failed to communicate!"); \
-    this->status_set_warning(); \
-    return; \
-  }
+static const char *const TAG = "spd2010";
   
 #define CONFIG_ESP_LCD_TOUCH_MAX_POINTS     (5)     
-#define SPD2010_ADDR                     (0x53)
 
 struct SPD2010_Touch touch_data = {0};
 
