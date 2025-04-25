@@ -35,6 +35,7 @@ void Spd2010Touchscreen::setup() {
 }
 
 void Spd2010Touchscreen::update_touches() {
+  ESP_LOGD(TAG, "update_touches");
   uint8_t touch_cnt = 0;
   struct SPD2010_Touch touch = {0};
   this->tp_read_data(&touch);
@@ -43,7 +44,12 @@ void Spd2010Touchscreen::update_touches() {
   touch_cnt = (touch.touch_num > CONFIG_ESP_LCD_TOUCH_MAX_POINTS ? CONFIG_ESP_LCD_TOUCH_MAX_POINTS : touch.touch_num);
   touch_data.touch_num = touch_cnt;
   /* Fill all coordinates */
+  
+  ESP_LOGV(TAG, "Touches found: %d", touch_cnt);
+  
   for (int i = 0; i < touch_cnt; i++) {
+	ESP_LOGW(TAG, "Reporting a (%d,%d) touch on %d", touch.rpt[i].x, touch.rpt[i].y, touch.rpt[i].id);
+	
     this->add_raw_touch_position_(touch.rpt[i].id, touch.rpt[i].x, touch.rpt[i].y);   
   }
 
