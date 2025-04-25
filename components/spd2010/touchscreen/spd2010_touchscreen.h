@@ -85,8 +85,8 @@ class Spd2010Touchscreen : public Touchscreen, public i2c::I2CDevice {
   GPIOPin *enable_pin_{nullptr};
   
  private:
-  enable_();
-  hard_reset_();  
+  void enable_();
+  void hard_reset_();  
   esp_err_t write_tp_point_mode_cmd();
   esp_err_t write_tp_start_cmd();
   esp_err_t write_tp_cpu_start_cmd();
