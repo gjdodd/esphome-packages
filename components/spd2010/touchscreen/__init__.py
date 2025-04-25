@@ -27,7 +27,6 @@ CONFIG_SCHEMA = touchscreen.TOUCHSCREEN_SCHEMA.extend(
             cv.Required(CONF_RESET_PIN): cv.All(
                 pins.gpio_output_pin_schema,
             ),
-            ,
             cv.Required("enable_pin"): cv.All(
                 pins.gpio_output_pin_schema,
             ),
