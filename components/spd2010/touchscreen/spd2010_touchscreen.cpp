@@ -16,7 +16,7 @@ static const char *const TAG = "spd2010.touchscreen";
   }
   
 #define CONFIG_ESP_LCD_TOUCH_MAX_POINTS     (5)     
-#define SPD2010_ADDR                    (0x53)
+#define SPD2010_ADDR                     (0x53)
 
 struct SPD2010_Touch touch_data = {0};
 
@@ -27,6 +27,11 @@ void Spd2010Touchscreen::setup() {
     this->interrupt_pin_->setup();
     this->attach_interrupt_(this->interrupt_pin_, gpio::INTERRUPT_FALLING_EDGE);  
   }
+  
+  if (this->enable_pin_ != nullptr) {
+    this->enable_pin_->setup();
+    this->enable_();
+  }  
   
   if (this->reset_pin_ != nullptr) {
     this->reset_pin_->setup();
@@ -45,7 +50,7 @@ void Spd2010Touchscreen::update_touches() {
   touch_data.touch_num = touch_cnt;
   /* Fill all coordinates */
   
-  ESP_LOGV(TAG, "Touches found: %d", touch_cnt);
+  ESP_LOGD(TAG, "Touches found: %d", touch_cnt);
   
   for (int i = 0; i < touch_cnt; i++) {
 	ESP_LOGW(TAG, "Reporting a (%d,%d) touch on %d", touch.rpt[i].x, touch.rpt[i].y, touch.rpt[i].id);
@@ -60,6 +65,13 @@ void Spd2010Touchscreen::hard_reset_() {
   if (this->reset_pin_ != nullptr) {
     this->reset_pin_->digital_write(false);
     delay(50);
+    this->reset_pin_->digital_write(true);
+	delay(50);
+  }
+}
+
+void Spd2010Touchscreen::enable_() {
+  if (this->enable_pin_ != nullptr) {
     this->reset_pin_->digital_write(true);
 	delay(50);
   }

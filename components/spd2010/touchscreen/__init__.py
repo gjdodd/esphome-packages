@@ -2,7 +2,7 @@ from esphome import pins
 import esphome.codegen as cg
 from esphome.components import i2c, touchscreen
 import esphome.config_validation as cv
-from esphome.const import CONF_ID, CONF_INTERRUPT_PIN, CONF_RESET_PIN
+from esphome.const import CONF_ID, CONF_INTERRUPT_PIN, CONF_RESET_PIN, CONF_PIN
 
 from .. import spd2010_ns
 
@@ -25,6 +25,10 @@ CONFIG_SCHEMA = touchscreen.TOUCHSCREEN_SCHEMA.extend(
                 pins.internal_gpio_input_pin_schema
             ),
             cv.Required(CONF_RESET_PIN): cv.All(
+                pins.gpio_output_pin_schema,
+            ),
+            ,
+            cv.Required("enable_pin"): cv.All(
                 pins.gpio_output_pin_schema,
             ),
         }
