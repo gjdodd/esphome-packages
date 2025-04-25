@@ -9,6 +9,7 @@ from .. import spd2010_ns
 CODEOWNERS = ["@gjdodd"]
 DEPENDENCIES = ["i2c"]
 
+spd2010_ns = cg.esphome_ns.namespace("spd2020")
 Spd2010Touchscreen = spd2010_ns.class_(
     "Spd2010Touchscreen",
     touchscreen.Touchscreen,
