@@ -61,8 +61,8 @@ i2c:
   sda: GPIO11
   scl: GPIO10
   scan: true
-  frequency: 50kHz
-  timeout: 1000ms
+  #frequency: 50kHz
+  #timeout: 1000ms
 
 pca9554:
   - id: 'pca9554a_device'
