@@ -22,9 +22,6 @@ struct SPD2010_Touch touch_data = {0};
 
 void Spd2010Touchscreen::setup() {
   ESP_LOGCONFIG(TAG, "Setting up SPD2010 Touchscreen...");
-  this->interrupt_pin_->pin_mode(gpio::FLAG_INPUT | gpio::FLAG_PULLUP);
-  this->interrupt_pin_->setup();
-  
   if (this->interrupt_pin_ != nullptr) {
     this->interrupt_pin_->pin_mode(gpio::FLAG_INPUT | gpio::FLAG_PULLUP);
     this->interrupt_pin_->setup();
