@@ -45,3 +45,6 @@ async def to_code(config):
     if reset_pin_config := config.get(CONF_RESET_PIN):
         reset_pin = await cg.gpio_pin_expression(reset_pin_config)
         cg.add(var.set_reset_pin(reset_pin))
+    if enable_pin_config := config.get("enable_pin"):
+        enable_pin = await cg.gpio_pin_expression(enable_pin_config)
+        cg.add(var.set_enable_pin(enable_pin))
